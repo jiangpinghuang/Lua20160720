@@ -59,6 +59,8 @@ function Dict:add(w)
 end
 
 function Dict:index(w)
+  print('w:')
+  print(w)
   local index = self._index[w]
   if index == nil then
     if self.unk_index == nil then

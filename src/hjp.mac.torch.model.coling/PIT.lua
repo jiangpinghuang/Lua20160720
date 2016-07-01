@@ -68,8 +68,11 @@ end
 function PIT.readData(dir, vocab)
   local dataset = {}
   dataset.vocab = vocab
-  dataset.lsent = PIT.readSent(dir .. 'ls.toks', vocab)
-  dataset.rsent = PIT.readSent(dir .. 'rs.toks', vocab)
+  dataset.lsent = PIT.readSent(dir .. 'a.txt', vocab)
+  local linputs = s
+  print(dataset.lsent)
+  dataset.rsent = PIT.readSent(dir .. 'b.txt', vocab)
+  print(dataset.rsent)
   dataset.size  = #dataset.lsent
   local id = torch.DiskFile(dir .. 'id.txt')
   local sim = torch.DiskFile(dir .. 'sim.txt')
@@ -79,6 +82,14 @@ function PIT.readData(dir, vocab)
     dataset.ids[i] = id:readInt() 
     dataset.labels[i] = sim:readDouble()
   end  
+  print('lsent: ')
+  print(dataset.lsent[1])
+  print('rsent: ')
+  print(dataset.rsent[1])
+  print('ids: ')
+  print(dataset.ids)
+  print('sim: ')
+  print(dataset.labels)
   id:close()
   sim:close()  
   return dataset
@@ -104,8 +115,104 @@ function PIT.train(train)
 
 end
 
-function PIT.trainDev(train, dev)
+function PIT.trainDev(train, dev, embVec)
+  local inputSize = 300
+  local outputSize = 300
+  local kW = 1
+  local dW = 1
 
+  cnn1 = nn.Sequential()
+  cnn1:add(nn.TemporalConvolution(inputSize, outputSize, kW, dW))
+  cnn1:add(nn.Tanh())
+  cnn1:add(nn.Max(1))
+
+  cnn2 = nn.Sequential()
+  cnn2:add(nn.TemporalConvolution(inputSize, outputSize, kW, dW))
+  cnn2:add(nn.Tanh())
+  cnn2:add(nn.Max(1))
+
+  cnnp = nn.ParallelTable()
+  cnnp:add(cnn1)
+  cnnp:add(cnn2)
+
+  cnn = nn.Sequential()
+  cnn:add(cnnp)
+  cnn:add(nn.CosineDistance())
+  
+
+
+  --input = {torch.randn(4, 300), torch.randn(5, 300)}
+  ---output = cnn:forward(input)
+
+  for i = 1, train.size do
+    local lsent, rsent = train.lsent[i], train.rsent[i]
+    local linputs = embVec:index(1, lsent:long()):double()
+    --print('linputs: ')
+    --print(linputs)  
+    --print('rinputs: ')
+    local rinputs = embVec:index(1, rsent:long()):double()
+   -- print(rinputs)
+   -- print('sim: ')
+   -- print(i)
+   -- print(train.labels[i])
+    --local x = {linputs, rinputs}
+    input = {linputs, rinputs}
+    --input = {torch.randn(7, 300), torch.randn(12, 300)}
+    y = torch.Tensor(1):fill(train.labels[i])
+    print('y:')
+    print(y)
+    --print(linputs)
+    pred = cnn:forward(input)
+    print('pred: ')
+    print(pred)
+    print('err: ')
+    
+    criterion = nn.MSECriterion()
+    local err = criterion:forward(pred, y)
+    local gradCriterion = criterion:backward(pred, y)
+    cnn:zeroGradParameters()
+    cnn:backward(input, gradCriterion)
+    cnn:updateParameters(0.05)
+    print(err)
+    --local err = criterion:forward(pred, y)
+
+    
+    --criterion = nn.MSECriterion()
+    --local err = criterion:forward(pred, y)
+   -- local gradCriterion = criterion:backward(pred, y)
+    --cnn:zeroGradParameters()
+   -- cnn:backward(x, gradCriterion)
+   -- cnn:updateParameters(0.05)
+  end
+  
+  local devlabels = torch.Tensor(dev.size)
+  local predictions = torch.Tensor(dev.size)
+  for i = 1, dev.size do
+    local lsent, rsent = dev.lsent[i], train.rsent[i]
+    local linputs = embVec:index(1, lsent:long()):double()
+    --print('linputs: ')
+    --print(linputs)  
+    --print('rinputs: ')
+    local rinputs = embVec:index(1, rsent:long()):double()
+    --print(rinputs)
+    print('sim: ')
+    devlabels[i] = torch.Tensor(1):fill(dev.labels[i])
+   
+    local x = {linputs, rinputs}
+    --local y = dev.labels[i] * 0.2
+    pred = cnn:forward(x)
+    predictions[i] = cnn:forward(x)
+    print("dev: ")
+    print(pred)
+  end
+  print('devlabels: ')
+  print(devlabels)
+  print('predictions: ')
+  print(predictions)
+  print('pearson: ')
+  val = pearson(predictions, devlabels)
+  print('val: ')
+  print(val)
 end
 
 function PIT.predict(model, test)
@@ -160,8 +267,8 @@ local function main()
   print('test size: ' .. testSet.size)
   
   local modelName, modelClass, modelStruct
-  modelName   = 'Conv'
-  modelClass  = PIT.Conv
+  modelName   = 'CNN'
+  modelClass  = PIT.ConvNN
   modelStruct = modelName
   
   local config = {
@@ -169,14 +276,14 @@ local function main()
     dims  = 300
   }
   
-  local model = modelClass{
-    embVec  = vecs,
-    struct  = modelStruct,
-    layers  = config.layer,
-    vecDim  = config.dims
-  }
+--  model = model_class{
+--    embVec  = vecs,
+--    struct  = modelStruct,
+--    layers  = config.layer,
+--    vecDim  = config.dims
+--  }
   
-  
+  PIT.trainDev(trainSet,devSet, vecs)
   
   
   header('demo')

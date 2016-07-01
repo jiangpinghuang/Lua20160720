@@ -715,7 +715,12 @@ function Conv:trainCombineOnly(dataset)
         local idx = indices[i + j - 1]
         local lsent, rsent = dataset.lsents[idx], dataset.rsents[idx]
         local linputs = self.emb_vecs:index(1, lsent:long()):double()
+        print('linputs: ')
+        print(linputs)
+        
         local rinputs = self.emb_vecs:index(1, rsent:long()):double()
+        print('rinputs: ')
+        print(rinputs)
         
         local part2 = self.convModel:forward({linputs, rinputs})
         local output = self.softMaxC:forward(part2)
