@@ -79,11 +79,9 @@ end
 function PIT.readData(dir, vocab)
   local dataset = {}
   dataset.vocab = vocab
-  dataset.lsent = PIT.readSent(dir .. 'ls.toks', vocab)
+  dataset.lsent = PIT.readSent(dir .. 'ls.txt', vocab)
   local linputs = s
-  --print(dataset.lsent)
-  dataset.rsent = PIT.readSent(dir .. 'rs.toks', vocab)
-  --print(dataset.rsent)
+  dataset.rsent = PIT.readSent(dir .. 'rs.txt', vocab)
   dataset.size  = #dataset.lsent
   local id = torch.DiskFile(dir .. 'id.txt')
   local sim = torch.DiskFile(dir .. 'sim.txt')
@@ -93,14 +91,7 @@ function PIT.readData(dir, vocab)
     dataset.ids[i] = id:readInt() 
     dataset.labels[i] = sim:readDouble()
   end  
---  print('lsent: ')
---  print(dataset.lsent[1])
---  print('rsent: ')
---  print(dataset.rsent[1])
---  print('ids: ')
---  print(dataset.ids)
---  print('sim: ')
---  print(dataset.labels)
+
   id:close()
   sim:close()  
   return dataset
@@ -154,31 +145,13 @@ function PIT.trainDev(train, dev, embVec)
   cnn:add(cnnp)
   cnn:add(nn.CosineDistance())
   
-  --input = {torch.randn(4, 300), torch.randn(5, 300)}
-  ---output = cnn:forward(input)
-
   for i = 1, train.size do
     local lsent, rsent = train.lsent[i], train.rsent[i]
     local linputs = embVec:index(1, lsent:long()):double()
-    --print('linputs: ')
-    --print(linputs)  
-    --print('rinputs: ')
     local rinputs = embVec:index(1, rsent:long()):double()
-   -- print(rinputs)
-   -- print('sim: ')
-   -- print(i)
-   -- print(train.labels[i])
-    --local x = {linputs, rinputs}
     input = {linputs, rinputs}
-    --input = {torch.randn(7, 300), torch.randn(12, 300)}
     y = torch.Tensor(1):fill(train.labels[i])
-    --print('y:')
-    --print(y)
-    --print(linputs)
     pred = cnn:forward(input)
-    --print('pred: ')
-    --print(pred)
-    --print('err: ')
     
     criterion = nn.MSECriterion()
     local err = criterion:forward(pred, y)
@@ -186,16 +159,6 @@ function PIT.trainDev(train, dev, embVec)
     cnn:zeroGradParameters()
     cnn:backward(input, gradCriterion)
     cnn:updateParameters(0.05)
-    --print(err)
-    --local err = criterion:forward(pred, y)
-
-    
-    --criterion = nn.MSECriterion()
-    --local err = criterion:forward(pred, y)
-   -- local gradCriterion = criterion:backward(pred, y)
-    --cnn:zeroGradParameters()
-   -- cnn:backward(x, gradCriterion)
-   -- cnn:updateParameters(0.05)
   end
   
   local devlabels = torch.Tensor(dev.size)
@@ -203,26 +166,14 @@ function PIT.trainDev(train, dev, embVec)
   for i = 1, dev.size do
     local lsent, rsent = dev.lsent[i], train.rsent[i]
     local linputs = embVec:index(1, lsent:long()):double()
-    --print('linputs: ')
-    --print(linputs)  
-    --print('rinputs: ')
     local rinputs = embVec:index(1, rsent:long()):double()
-    --print(rinputs)
-    --print('sim: ')
     devlabels[i] = torch.Tensor(1):fill(dev.labels[i])
    
     local x = {linputs, rinputs}
-    --local y = dev.labels[i] * 0.2
     pred = cnn:forward(x)
     predictions[i] = cnn:forward(x)
-    --print("dev: ")
-    --print(pred)
   end
-  --print('devlabels: ')
-  --print(devlabels)
-  --print('predictions: ')
-  --print(predictions)
-  --print('pearson: ')
+
   val = pearson(predictions, devlabels)
   print('val: ')
   print(val)
@@ -272,9 +223,9 @@ local function main()
   collectgarbage()
 
   header('Loading datasets...')
-  local trainDir = '/home/hjp/Workshop/Model/coling/pits/train/'
-  local devDir = '/home/hjp/Workshop/Model/coling/pits/dev/'
-  local testDir = '/home/hjp/Workshop/Model/coling/pits/test/'
+  local trainDir = '/home/hjp/Workshop/Model/coling/pitt/train/'
+  local devDir = '/home/hjp/Workshop/Model/coling/pitt/dev/'
+  local testDir = '/home/hjp/Workshop/Model/coling/pitt/test/'
   local trainSet = PIT.readData(trainDir,vocab)
   local devSet = PIT.readData(devDir,vocab)
   local testSet = PIT.readData(testDir,vocab)
@@ -291,17 +242,11 @@ local function main()
     layer = 1,
     dims  = 300
   }
-  
---  model = model_class{
---    embVec  = vnvecs,
---    struct  = modelStruct,
---    layers  = config.layer,
---    vecDim  = config.dims
---  }
+
   local epoches = 10
   for i = 1, epoches do
     timer = torch.Timer()
-    PIT.trainDev(trainSet,testSet, vecs)
+    PIT.trainDev(trainSet, devSet, vecs)
     print('Time elapsed for this epoch: ' .. timer:time().real .. ' seconds.')
   end 
   

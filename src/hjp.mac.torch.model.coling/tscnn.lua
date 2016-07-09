@@ -26,7 +26,7 @@ print(similarityMeasure)
 --printf = utils.printf       -- what's the utils?
 
 -- global paths (modify if desired)
-similarityMeasure.data_dir        = '/home/hjp/Workshop/Model/coling/data'
+similarityMeasure.data_dir        = '/home/hjp/Workshop/Model/coling/'
 similarityMeasure.models_dir      = '/home/hjp/Workshop/Model/coling/trained_models'
 similarityMeasure.predictions_dir = '/home/hjp/Workshop/Model/coling/predictions'
 
@@ -64,10 +64,10 @@ torch.seed()
 print('<torch> using the automatic seed: ' .. torch.initialSeed())      -- why does the model use an initial seed? --
 
 -- directory containing data set files
-local data_dir = '/home/hjp/Workshop/Model/coling/data/pit/'
+local data_dir = '/home/hjp/Workshop/Model/coling/pitt/'
 
 -- load vocab
-local vocab = similarityMeasure.Vocab(data_dir .. 'vocab-cased.txt')
+local vocab = similarityMeasure.Vocab(data_dir .. 'vocabs.txt')
 
 -- load embeddings
 print('loading word embeddings')

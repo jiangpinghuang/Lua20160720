@@ -56,8 +56,8 @@ end
 function similarityMeasure.read_relatedness_dataset(dir, vocab, task)
   local dataset = {}
   dataset.vocab = vocab
-  dataset.lsents = similarityMeasure.read_sentences(dir .. 'a.toks', vocab)
-  dataset.rsents = similarityMeasure.read_sentences(dir .. 'b.toks', vocab)
+  dataset.lsents = similarityMeasure.read_sentences(dir .. 'ls.txt', vocab)
+  dataset.rsents = similarityMeasure.read_sentences(dir .. 'rs.txt', vocab)
   dataset.size = #dataset.lsents
   print('dir: ')
   print(dir)
