@@ -39,7 +39,7 @@ function pit.CNN(train, dev, embVec)
   cnn:add(cnnp)
   cnn:add(nn.CosineDistance())
   
-    for i = 1, train.size do
+  for i = 1, train.size do
     local lsent, rsent = train.lsent[i], train.rsent[i]
     local linputs = embVec:index(1, lsent:long()):double()
     local rinputs = embVec:index(1, rsent:long()):double()
