@@ -1,5 +1,8 @@
--- SemEval-2015 Task1 PIT
+--[[
+This model is for SemEval-2015 Task1 paraphrase identification and similarity measurement in Twitter. 
+]]--
 
+-- import packages --
 require('torch')
 require('nn')
 require('nngraph')
@@ -8,22 +11,27 @@ require('xlua')
 require('sys')
 require('lfs')
 
+-- define a table --
 PIT = {}
 
+-- import a file into PIT --
 include('Dict.lua')
 
+-- define a header --
 local function header(s)
   print(string.rep('-', 80))
   print(s)
   print(string.rep('-', 80))
 end 
 
+-- computing pearson correlation --
 local function pearson(x, y)
   x = x - x:mean()
   y = y - y:mean()
   return x:dot(y) / (x:norm() * y:norm()) 
 end
 
+-- split sentence into tokens --
 function PIT.sentSplit(sent, sep)
   local tokens = {}  
   while (true) do
@@ -39,12 +47,14 @@ function PIT.sentSplit(sent, sep)
   return tokens
 end
 
+-- read embedding --
 function PIT.readEmb(voc, emb)
   local vocab = PIT.Dict(voc)
   local embed = torch.load(emb)
   return vocab, embed
 end
 
+-- read sentences --
 function PIT.readSent(path, vocab)
   local sents = {}
   local file = io.open(path, 'r')
@@ -65,6 +75,7 @@ function PIT.readSent(path, vocab)
   return sents
 end
 
+-- read train, dev and test data --
 function PIT.readData(dir, vocab)
   local dataset = {}
   dataset.vocab = vocab
@@ -95,6 +106,7 @@ function PIT.readData(dir, vocab)
   return dataset
 end
 
+-- PIT initialization --
 function PIT:__init(config)
   self.layer            = config.layer            or 1
   self.dim              = config.dim              or 300
@@ -103,6 +115,7 @@ function PIT:__init(config)
   self.batchSize        = config.batchSize        or 25
 end
 
+-- model configuration --
 local function config()
   local layer = 1
   local dim = 300
@@ -111,10 +124,12 @@ local function config()
   local batchSize = 25
 end
 
+-- model train module, not valid, with cross-validation --
 function PIT.train(train)
 
 end
 
+-- model train module with valid data --
 function PIT.trainDev(train, dev, embVec)
   local inputSize = 300
   local outputSize = 300
@@ -139,8 +154,6 @@ function PIT.trainDev(train, dev, embVec)
   cnn:add(cnnp)
   cnn:add(nn.CosineDistance())
   
-
-
   --input = {torch.randn(4, 300), torch.randn(5, 300)}
   ---output = cnn:forward(input)
 
@@ -215,10 +228,12 @@ function PIT.trainDev(train, dev, embVec)
   print(val)
 end
 
+-- predict module with test data and trained model --
 function PIT.predict(model, test)
 
 end
 
+-- save the trained parameter when obtained the best performance --
 function PIT.save(model)
   local config = {
     layer         = self.layer,
@@ -233,6 +248,7 @@ function PIT.save(model)
   })
 end
 
+-- define a main module with various inputs --
 local function main()
   header('Loading vectors...')
   local vocDir = '/home/hjp/Workshop/Model/coling/pit/vocabs.txt'
@@ -277,7 +293,7 @@ local function main()
   }
   
 --  model = model_class{
---    embVec  = vecs,
+--    embVec  = vnvecs,
 --    struct  = modelStruct,
 --    layers  = config.layer,
 --    vecDim  = config.dims
@@ -285,8 +301,8 @@ local function main()
   
   PIT.trainDev(trainSet,devSet, vecs)
   
-  
   header('demo')
 end
 
+-- begin working --
 main()
