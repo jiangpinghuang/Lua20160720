@@ -129,12 +129,12 @@ function PIT.trainDev(train, dev, embVec)
 
   cnn1 = nn.Sequential()
   cnn1:add(nn.TemporalConvolution(inputSize, outputSize, kW, dW))
-  cnn1:add(nn.Tanh())
+  cnn1:add(nn.PReLU())
   cnn1:add(nn.Max(1))
 
   cnn2 = nn.Sequential()
   cnn2:add(nn.TemporalConvolution(inputSize, outputSize, kW, dW))
-  cnn2:add(nn.Tanh())
+  cnn2:add(nn.PReLU())
   cnn2:add(nn.Max(1))
 
   cnnp = nn.ParallelTable()
@@ -158,7 +158,7 @@ function PIT.trainDev(train, dev, embVec)
     local gradCriterion = criterion:backward(pred, y)
     cnn:zeroGradParameters()
     cnn:backward(input, gradCriterion)
-    cnn:updateParameters(0.05)
+    cnn:updateParameters(0.01)
   end
   
   local devlabels = torch.Tensor(dev.size)
@@ -223,9 +223,9 @@ local function main()
   collectgarbage()
 
   header('Loading datasets...')
-  local trainDir = '/home/hjp/Workshop/Model/coling/pitt/train/'
-  local devDir = '/home/hjp/Workshop/Model/coling/pitt/dev/'
-  local testDir = '/home/hjp/Workshop/Model/coling/pitt/test/'
+  local trainDir = '/home/hjp/Workshop/Model/coling/pits/train/'
+  local devDir = '/home/hjp/Workshop/Model/coling/pits/dev/'
+  local testDir = '/home/hjp/Workshop/Model/coling/pits/test/'
   local trainSet = PIT.readData(trainDir,vocab)
   local devSet = PIT.readData(devDir,vocab)
   local testSet = PIT.readData(testDir,vocab)
@@ -246,7 +246,7 @@ local function main()
   local epoches = 10
   for i = 1, epoches do
     timer = torch.Timer()
-    PIT.trainDev(trainSet, devSet, vecs)
+    PIT.trainDev(trainSet, testSet, vecs)
     print('Time elapsed for this epoch: ' .. timer:time().real .. ' seconds.')
   end 
   
