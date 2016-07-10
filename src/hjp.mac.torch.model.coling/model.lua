@@ -2,8 +2,6 @@ local model = torch.class('pit.model')
 
 function model:__init(config)
   self.dim    = config.dim    or 150
-  self.lr     = config.lr     or 0.01
-  self.crit   = nn.DistKLDivCriterion()
 end
 
 function sentLSTM()
@@ -15,7 +13,7 @@ end
 function wordCNN()
 end
 
-function pit.CNN(train, dev, embVec)
+function pit.demoCNN(train, dev, embVec)
   local inputSize = 300
   local outputSize = 300
   local kW = 1
@@ -69,6 +67,5 @@ function pit.CNN(train, dev, embVec)
   end
 
   val = pit.pearson(predictions, devlabels)
-  print('val: ')
-  print(val)
+  return val
 end

@@ -12,30 +12,31 @@ include('model.lua')
 include('util.lua')
 include('vocab.lua')
 
-local function config()
-end
+config = {
+  dim       = 100,
+  learnRate = 0.01,
+  batchSize = 5,
+  layerSize = 1,
+  regular   = 1e-4,
+  charCNN   = 1,
+  wordCNN   = 1,
+  sentLSTM  = 1,
+  hidSize   = 150,
+  epochSize = 10,
+  piCrit    = nn.MSECriterion(),
+  simCrit   = nn.DistKLDivCriterion(),
+  vDir      = '/home/hjp/Workshop/Model/coling/pit/vocabs.txt',
+  eVocDir   = '/home/hjp/Workshop/Model/coling/vec/twitter.vocab',
+  eDimDir   = '/home/hjp/Workshop/Model/coling/vec/twitter.th',
+  trainDir  = '/home/hjp/Workshop/Model/coling/pit/train/',
+  devDir    = '/home/hjp/Workshop/Model/coling/pit/dev/',
+  testDir   = '/home/hjp/Workshop/Model/coling/pit/test/'  
+}
 
 local function train()
-end
-
-local function valid()
-end
-
-local function test()
-end
-
-local function save()
-end
-
-local function main()
-  print("Loading vectors...")
-  local vDir = '/home/hjp/Workshop/Model/coling/pit/vocabs.txt'
-  local voc = pit.vocab(vDir)
-  local eVocDir = "/home/hjp/Workshop/Model/coling/vec/twitter.vocab"
-  local eDimDir = "/home/hjp/Workshop/Model/coling/vec/twitter.th"
-  local eVoc, eVec = pit.readEmb(eVocDir, eDimDir)
-  local dimSize = eVec:size(2)  
-  local vec = torch.Tensor(voc.size, dimSize)
+  local voc = pit.vocab(config.vDir)
+  local eVoc, eVec = pit.readEmb(config.eVocDir, config.eDimDir)
+  local vec = torch.Tensor(voc.size, eVec:size(2))
   for i = 1, voc.size do
     local w = voc:token(i)
     if eVoc:contains(w) then
@@ -43,98 +44,29 @@ local function main()
     else
       vec[i]:uniform(-0.05, 0.05)
     end
-  end  
+  end
   eVoc, eVec = nil, nil
   collectgarbage()
-  print("Loaded " .. voc.size .. " words embedding!")
   
-  print("Loading data...")
-  local trainDir = '/home/hjp/Workshop/Model/coling/pits/train/'
-  local devDir = '/home/hjp/Workshop/Model/coling/pits/dev/'
-  local testDir = '/home/hjp/Workshop/Model/coling/pits/test/'
-  local trainSet = pit.readData(trainDir,voc)
-  local devSet = pit.readData(devDir,voc)
-  local testSet = pit.readData(testDir,voc)
-  print('train size: ' .. trainSet.size)
-  print('dev size: ' .. devSet.size)
-  print('test size: ' .. testSet.size)
-  print("finished!")
-  
-  pit.CNN(trainSet, testSet, vec)
+  local trainSet  = pit.readData(config.trainDir, voc)
+  local devSet    = pit.readData(config.devDir, voc)
+  for j = 1, config.epochSize do 
+    timer = torch.Timer()
+    local val = pit.demoCNN(trainSet, devSet, vec)
+    print(string.format("Epoch%3d, pearson: %6.8f, and costs %6.8f s.",j, val, timer:time().real))
+  end
+end
+
+local function test()
+  local testSet   = pit.readData(config.testDir, voc) 
+end
+
+local function save()
+  -- save the parameters and results.
+end
+
+local function main()
+  train()
 end
 
 main()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
