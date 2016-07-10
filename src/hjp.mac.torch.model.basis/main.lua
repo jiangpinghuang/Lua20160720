@@ -18,6 +18,7 @@ config = {
   batchSize = 5,
   layerSize = 1,
   regular   = 1e-4,
+  struct    = 1,
   charCNN   = 1,
   wordCNN   = 1,
   sentLSTM  = 1,
@@ -50,10 +51,16 @@ local function train()
   
   local trainSet  = pit.readData(config.trainDir, voc)
   local devSet    = pit.readData(config.devDir, voc)
+  local bestScore = 0.0
+  local bestState = state
   for j = 1, config.epochSize do 
     timer = torch.Timer()
-    local val = pit.demoCNN(trainSet, devSet, vec)
-    print(string.format("Epoch%3d, pearson: %6.8f, and costs %6.8f s.",j, val, timer:time().real))
+    local score = pit.demoCNN(trainSet, devSet, vec)
+    if score >= bestScore then
+      bestScore = score
+      bestState = state
+    end
+    print(string.format("Epoch%3d, pearson: %6.8f, and costs %6.8f s.",j, score, timer:time().real))
   end
 end
 

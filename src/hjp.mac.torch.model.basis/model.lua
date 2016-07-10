@@ -13,6 +13,9 @@ end
 function wordCNN()
 end
 
+function pit.createModel()
+end
+
 function pit.demoCNN(train, dev, embVec)
   local inputSize = 300
   local outputSize = 300
