@@ -28,7 +28,7 @@ function PIT.sentSplit(sent, tag)
 end
 
 function PIT.readEmb(voc, emb)
-  local v = PIT.vocab(voc)
+  local v = PIT.Vocab(voc)
   local e = torch.load(emb)
   return v, e
 end

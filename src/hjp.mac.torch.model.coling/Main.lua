@@ -23,7 +23,7 @@ config = {
   wordCNN   = 1,
   sentLSTM  = 1,
   hidSize   = 150,
-  epochSize = 10,
+  epochSize = 20,
   crit      = nn.DistKLDivCriterion(),
   vDir      = '/home/hjp/Workshop/Model/coling/pit/vocabs.txt',
   eVocDir   = '/home/hjp/Workshop/Model/coling/vec/twitter.vocab',
@@ -34,7 +34,7 @@ config = {
 }
 
 local function train()
-  local voc = PIT.vocab(config.vDir)
+  local voc = PIT.Vocab(config.vDir)
   local eVoc, eVec = PIT.readEmb(config.eVocDir, config.eDimDir)
   local vec = torch.Tensor(voc.size, eVec:size(2))
   for i = 1, voc.size do
@@ -50,25 +50,24 @@ local function train()
   
   local trainSet  = PIT.readData(config.trainDir, voc)
   local devSet    = PIT.readData(config.devDir, voc)
-  local bestScore = 0.0
-  local bestModel = model
+  local testSet   = PIT.readData(config.testDir, voc) 
+  local bestDevScore = 0.0
+  local bestTestScore= 0.0
+  local name = PIT.wordCNN()
   for j = 1, config.epochSize do 
     timer = torch.Timer()
-    local score = PIT.demoCNN(trainSet, devSet, vec)
-    if score >= bestScore then
-      bestScore = score
-      bestModel = model
-    end
-    print(string.format("Epoch%3d, pearson: %6.8f, and costs %6.8f s.",j, score, timer:time().real))
+    local devScore = PIT.demoCNN(trainSet, devSet, vec, name)
+    print(string.format("Epoch%3d, pearson: %6.8f, and costs %6.8f s.",j, devScore, timer:time().real))
+    if devScore >= bestDevScore then
+      bestDevScore = devScore
+      local testScore = PIT.predTest(name, testSet, vec)
+      if testScore >= bestTestScore then
+        bestTestScore = testScore
+      end
+      local msg = "The current best dev score is: " .. bestDevScore .. ", and best Test Score is: " .. bestTestScore .. "."
+      PIT.header(msg)
+    end    
   end
-end
-
-local function test()
-  local testSet   = PIT.readData(config.testDir, voc) 
-end
-
-local function save()
-  -- save the parameters and results.
 end
 
 local function main()
