@@ -11,8 +11,8 @@ function charCNN()
 end
 
 function PIT.wordCNN()
-  local inputSize = 300
-  local outputSize = 300
+  local inputSize = 200
+  local outputSize = 200
   local kW = 1
   local dW = 1
 
